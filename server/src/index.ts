@@ -1,7 +1,7 @@
 import { serve } from '@hono/node-server'
 import { swaggerUI } from '@hono/swagger-ui'
 import { OpenAPIHono } from '@hono/zod-openapi'
-import { userRoute } from './route/users/route.js'
+import { userRoute } from './routes/users/route.js'
 
 export const app = new OpenAPIHono()
 
