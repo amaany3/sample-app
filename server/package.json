@@ -1,0 +1,31 @@
+{
+  "name": "server",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file=.env src/index.ts",
+    "build": "tsc",
+    "ci": "biome check",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "openapi.gen": "curl -s http://localhost:3000/spec | jq . > ../schema/openapi.json && openapi-typescript ../schema/openapi.json -o tests/schema.d.ts && biome check --write tests/schema.d.ts",
+    "prisma:pull": "prisma db pull && prisma-case-format && prisma format && prisma generate"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.5",
+    "@hono/swagger-ui": "^0.4.1",
+    "@hono/zod-openapi": "^0.16.4",
+    "@prisma/client": "^5.21.1",
+    "hono": "^4.6.9"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@types/node": "^20.17.6",
+    "openapi-fetch": "^0.13.0",
+    "openapi-typescript": "^7.4.3",
+    "prisma": "^5.21.1",
+    "prisma-case-format": "^2.2.1",
+    "tsx": "^4.7.1",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.5"
+  }
+}
