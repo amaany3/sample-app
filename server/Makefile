@@ -3,20 +3,22 @@
 #############################
 .PHONY: middleware.up
 middleware.up:
-	@docker compose up -d
+	@docker compose --profile service up -d
 
 .PHONY: middleware.down
 middleware.down:
-	@docker compose down
+	@docker compose --profile service down
 
-.PHONY: middleware.reset
-middleware.reset:
-	@docker compose down --remove-orphans -v
-	@docker compose up -d
+.PHONY: middleware.restart
+middleware.restart: middleware.down middleware.up 
 
 .PHONY: middleware.psql
 middleware.psql:
-	PGPASSWORD=pgpass psql -h localhost -p 5432 -U hono -d hono
+	PGPASSWORD=pgpass psql -h postgres.sampleapp.local -p 5432 -U sampleapp -d sampleapp
+
+.PHONY: middleware.npm.install
+middleware.npm.install:
+	@docker compose --profile adhoc run --rm sampleapp-node npm install
 
 #############################
 # migration
@@ -24,17 +26,17 @@ middleware.psql:
 .PHONY: migrate.diff.local
 migrate.diff.local:
 	@atlas schema diff \
-		--from "postgres://hono:pgpass@localhost:5432/hono?sslmode=disable" \
+		--from "postgres://sampleapp:pgpass@localhost:5432/sampleapp?sslmode=disable" \
 		--to "file://schema.sql" \
 		--dev-url docker://postgres/15/dev
 
 .PHONY: migrate.apply.local
 migrate.apply.local:
 	@atlas schema apply \
-		--url "postgres://hono:pgpass@localhost:5432/hono?sslmode=disable" \
+		--url "postgres://sampleapp:pgpass@localhost:5432/sampleapp?sslmode=disable" \
 		--to "file://schema.sql" \
 		--dev-url docker://postgres/15/dev
 
 .PHONY: migrate.seed.local
 migrate.seed.local:
-	PGPASSWORD=pgpass psql -h localhost -p 5432 -U hono -d hono -f seed.sql
+	PGPASSWORD=pgpass psql -h localhost -p 5432 -U sampleapp -d sampleapp -f seed.sql

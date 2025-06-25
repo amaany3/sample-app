@@ -1,36 +1,60 @@
+name: sampleapp
 services:
-  hono-postgres:
-    image: postgres:16.6-alpine3.21
-    container_name: hono-postgres
+  server:
+    image: node:22-alpine
+    container_name: sampleapp-server
+    working_dir: /app
+    command: npm run dev
+    env_file:
+      - .env
     labels:
-      - dev.orbstack.domains=postgres.hono.local
+      - dev.orbstack.domains=api.sampleapp.local
+    volumes:
+      - .:/app
+      - sampleapp-server-node-modules:/app/node_modules
+    networks:
+      - sampleapp-network
+    profiles:
+      - service
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:3000/spec"]
+      interval: 1s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+  sampleapp-postgres:
+    image: postgres:16.6-alpine3.21
+    container_name: sampleapp-postgres
+    labels:
+      - dev.orbstack.domains=postgres.sampleapp.local
     environment:
-      POSTGRES_DB: hono
-      POSTGRES_USER: hono
+      POSTGRES_DB: sampleapp
+      POSTGRES_USER: sampleapp
       POSTGRES_PASSWORD: pgpass
     volumes:
-      - hono-postgres-volume:/var/lib/postgresql/data
       - ./schema.sql:/docker-entrypoint-initdb.d/0.schema.sql
       - ./seed.sql:/docker-entrypoint-initdb.d/1.seed.sql
-      # - ./seed.dev.sql:/docker-entrypoint-initdb.d/2.seed.dev.sql
     networks:
-      - hono-network
-  hono-postgres-test:
-    image: postgres:16.6-alpine3.21
-    container_name: hono-postgres-test
-    labels:
-      - dev.orbstack.domains=test.postgres.hono.local
-    environment:
-      POSTGRES_DB: hono
-      POSTGRES_USER: hono
-      POSTGRES_PASSWORD: pgpass
+      - sampleapp-network
+    profiles:
+      - service
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sampleapp -d sampleapp"]
+      interval: 1s
+      timeout: 5s
+      retries: 5
+  sampleapp-node:
+    image: node:22-alpine
+    container_name: sampleapp-node
+    working_dir: /app
     volumes:
-      - ./schema.sql:/docker-entrypoint-initdb.d/0.schema.sql
-      - ./seed.sql:/docker-entrypoint-initdb.d/1.seed.sql
-    networks:
-      - hono-network
+      - .:/app
+      - sampleapp-server-node-modules:/app/node_modules
+    profiles:
+      - adhoc
 networks:
-  hono-network:
-    name: hono-network
+  sampleapp-network:
+    name: sampleapp-network
 volumes:
-  hono-postgres-volume:
+  sampleapp-postgres-volume:
+  sampleapp-server-node-modules:
